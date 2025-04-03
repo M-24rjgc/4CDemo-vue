@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { 
-  Monitor, 
-  HomeFilled, 
-  DataLine, 
-  Histogram, 
-  TrendCharts 
+import {
+  Monitor,
+  HomeFilled,
+  DataLine,
+  Histogram,
+  TrendCharts
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -19,7 +19,7 @@ const activeRoute = computed(() => {
 
 <template>
   <div class="app-container">
-    <el-container>
+    <el-container class="full-height-container">
       <el-header class="app-header">
         <div class="logo">
           <el-icon class="logo-icon"><Monitor /></el-icon>
@@ -32,6 +32,7 @@ const activeRoute = computed(() => {
           class="nav-menu"
           :default-active="activeRoute"
         >
+          <div class="menu-spacer"></div>
           <el-menu-item index="/">
             <el-icon><HomeFilled /></el-icon>
             <span>首页</span>
@@ -48,6 +49,7 @@ const activeRoute = computed(() => {
             <el-icon><TrendCharts /></el-icon>
             <span>深度分析</span>
           </el-menu-item>
+          <div class="menu-spacer"></div>
         </el-menu>
         <div class="user-menu">
           <el-dropdown>
@@ -76,91 +78,108 @@ const activeRoute = computed(() => {
   </div>
 </template>
 
-<style>
+<style scoped>
 :root {
-  --app-header-height: 60px;
-  --app-footer-height: 40px;
-}
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB',
-    'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: #f5f7fa;
-  color: #333;
-  margin: 0;
-  padding: 0;
-  height: 100vh;
+  --app-header-height: 64px;
+  --app-footer-height: 35px;
 }
 
 .app-container {
   min-height: 100vh;
+  display: flex;
+}
+
+.full-height-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .app-header {
   background-color: #fff;
-  border-bottom: 1px solid #ebeef5;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-  padding: 0;
+  border-bottom: 1px solid var(--el-border-color-lighter, #ebeef5);
+  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+  padding: 0 20px;
   display: flex;
   align-items: center;
   height: var(--app-header-height);
-  position: relative;
-  z-index: 10;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .logo {
   display: flex;
   align-items: center;
-  padding: 0 20px;
-  font-size: 18px;
-  font-weight: bold;
+  font-size: 20px;
+  font-weight: 600;
   color: var(--el-color-primary);
-  height: 100%;
-  width: 300px;
+  width: auto;
+  margin-right: 40px;
 }
 
 .logo-icon {
-  margin-right: 10px;
-  font-size: 24px;
+  margin-right: 8px;
+  font-size: 28px;
 }
 
 .nav-menu {
   flex: 1;
   border-bottom: none;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: transparent;
+}
+
+.nav-menu .el-menu-item {
+  flex: none;
+  padding: 0 22px;
+  transition: all 0.2s ease;
+}
+
+.nav-menu .el-menu-item:hover,
+.nav-menu .el-menu-item.is-active {
+  background-color: var(--el-color-primary-light-9, #ecf5ff);
+  color: var(--el-color-primary);
+}
+
+.nav-menu .el-menu-item.is-active {
+  border-bottom: 2px solid var(--el-color-primary);
+}
+
+.menu-spacer {
+  flex-grow: 1;
 }
 
 .user-menu {
-  margin-right: 20px;
+  margin-left: 20px;
+  display: flex;
+  align-items: center;
 }
 
 .app-main {
-  padding: 0;
-  min-height: calc(100vh - var(--app-header-height) - var(--app-footer-height));
-  background-color: #f5f7fa;
+  padding: 20px;
+  flex: 1;
+  overflow-y: auto;
+  background-color: var(--el-color-primary-light-9, #f5f9ff);
 }
 
 .app-footer {
   text-align: center;
-  color: #909399;
-  font-size: 14px;
-  padding: 10px 0;
+  color: var(--el-text-color-secondary, #909399);
+  font-size: 13px;
+  padding: 8px 0;
   height: var(--app-footer-height);
   background-color: #fff;
-  border-top: 1px solid #ebeef5;
+  border-top: 1px solid var(--el-border-color-lighter, #ebeef5);
+  flex-shrink: 0;
 }
 
-/* 页面过渡动画 */
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.3s;
+  transition: opacity 0.2s ease;
 }
 
 .fade-enter-from,

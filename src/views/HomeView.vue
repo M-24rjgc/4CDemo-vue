@@ -1,160 +1,313 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowRight, DataAnalysis, Monitor, Timer, Lightning, Aim } from '@element-plus/icons-vue'
+import { ArrowRight, DataAnalysis, Monitor, Timer, Promotion, MagicStick, Cpu } from '@element-plus/icons-vue'
 
 const router = useRouter()
 
-const navigateTo = (route: string) => {
-  router.push({ name: route })
+const navigateTo = (name: string) => {
+  router.push({ name })
 }
 
 const features = [
   {
-    title: '实时分析',
-    description: '实时采集并分析运动姿态数据，提供即时反馈',
-    icon: 'Monitor'
+    title: '实时监测',
+    description: '高频采集并展示步频、步幅、心率等关键指标。',
+    icon: Monitor,
+    color: '#409EFF'
   },
   {
-    title: '数据可视化',
-    description: '直观展示步态相位、足压分布和姿态评分',
-    icon: 'DataAnalysis'
+    title: '智能分析',
+    description: '基于AI算法分析跑步姿态，提供姿态评分和足压分布。',
+    icon: Cpu,
+    color: '#67C23A'
+  },
+  {
+    title: '即时反馈',
+    description: '根据实时数据提供针对性的语音或文字指导建议。',
+    icon: MagicStick,
+    color: '#E6A23C'
   },
   {
     title: '历史追踪',
-    description: '记录训练历史，追踪长期进步',
-    icon: 'Timer'
+    description: '记录每次训练数据，可视化您的进步历程。',
+    icon: DataAnalysis,
+    color: '#F56C6C'
   }
 ]
 </script>
 
 <template>
-  <div class="home-container">
-    <div class="header">
-      <h1>中长跑实时指导系统</h1>
-      <p class="subtitle">基于边缘AI的中长跑实时姿态分析与指导</p>
-    </div>
+  <div class="home-view">
+    <section class="hero-section">
+      <div class="hero-content">
+        <h1 class="hero-title">中长跑实时指导系统</h1>
+        <p class="hero-subtitle">您的专属AI跑步教练，实时分析，科学指导</p>
+        <el-button
+          type="primary"
+          size="large"
+          round
+          class="hero-cta-button"
+          @click="navigateTo('dashboard')"
+        >
+          <el-icon><Promotion /></el-icon>
+          <span>开始我的训练</span>
+        </el-button>
+      </div>
+       <div class="hero-image-container">
+         <!-- Placeholder for an engaging image or animation -->
+         <img src="/running_illustration.svg" alt="Running Illustration" class="hero-image"/>
+       </div>
+    </section>
 
-    <div class="feature-container">
-      <el-row :gutter="20">
-        <el-col :span="8" v-for="(feature, index) in features" :key="index">
-          <el-card class="feature-card" :body-style="{ padding: '0px' }">
-            <div class="icon-container">
-              <el-icon :size="50" class="feature-icon">
+    <section class="features-section">
+      <h2 class="section-title">核心功能</h2>
+      <el-row :gutter="30">
+        <el-col :xs="24" :sm="12" :md="6" v-for="(feature, index) in features" :key="index">
+          <el-card class="feature-card" shadow="hover">
+            <div class="feature-icon-wrapper" :style="{ backgroundColor: feature.color + '1A' }">
+              <el-icon :size="40" class="feature-icon" :style="{ color: feature.color }">
                 <component :is="feature.icon"></component>
               </el-icon>
             </div>
             <div class="feature-content">
-              <h3>{{ feature.title }}</h3>
-              <p>{{ feature.description }}</p>
+              <h3 class="feature-title">{{ feature.title }}</h3>
+              <p class="feature-description">{{ feature.description }}</p>
             </div>
           </el-card>
         </el-col>
       </el-row>
-    </div>
+    </section>
 
-    <div class="action-container">
-      <el-button type="primary" size="large" @click="navigateTo('dashboard')">
-        开始分析
-        <el-icon class="el-icon--right"><ArrowRight /></el-icon>
-      </el-button>
-    </div>
+    <section class="how-it-works-section">
+       <h2 class="section-title">工作原理</h2>
+       <div class="steps-container">
+         <el-steps :active="4" align-center finish-status="success">
+           <el-step title="数据采集" description="佩戴传感器实时获取运动数据"></el-step>
+           <el-step title="边缘计算" description="设备端AI模型进行快速分析处理"></el-step>
+           <el-step title="实时反馈" description="通过APP或语音提供即时指导"></el-step>
+           <el-step title="云端同步" description="训练结束后数据同步至云端分析"></el-step>
+         </el-steps>
+       </div>
+     </section>
 
-    <div class="system-intro">
-      <h2>系统架构</h2>
-      <div class="architecture-diagram">
-        <!-- 系统架构图 -->
-        <el-image src="/architecture.jpg" alt="系统架构图" fit="contain"></el-image>
-      </div>
-      <div class="intro-text">
-        <p>本系统采用多层架构设计，包括数据采集层、信号处理层、推理层和应用层。系统利用IMU和足压传感器数据，在设备本地进行实时分析，为跑者提供姿态评分、步态分析和改进建议。</p>
-        <p>核心功能包括：实时数据分析、步态相位检测、姿态评分、足压分析、改进建议和历史数据追踪等。</p>
-      </div>
-    </div>
+    <!-- 可以保留或重构系统介绍部分 -->
+    <!--
+    <section class="system-intro-section">
+      <h2 class="section-title">系统架构</h2>
+      ...
+    </section>
+    -->
+
   </div>
 </template>
 
 <style scoped>
-.home-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
+.home-view {
+  padding: 0; /* 移除内边距，让 section 控制 */
 }
 
-.header {
-  text-align: center;
-  margin-bottom: 3rem;
+/* Hero Section Styles */
+.hero-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* 两端对齐 */
+  padding: 60px 40px; /* 上下 60px，左右 40px */
+  background: linear-gradient(135deg, var(--el-color-primary-light-7), var(--el-color-primary-light-9));
+  border-radius: 0 0 20px 20px; /* 底部圆角 */
+  min-height: 400px; /* 最小高度 */
+  overflow: hidden; /* 防止图片溢出 */
 }
 
-.header h1 {
-  font-size: 2.5rem;
+.hero-content {
+  max-width: 50%; /* 限制内容宽度 */
+  z-index: 1; /* 保证内容在图片上层 */
+}
+
+.hero-title {
+  font-size: 3rem; /* 增大标题字号 */
+  font-weight: bold;
   color: var(--el-color-primary);
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem;
+  line-height: 1.2;
 }
 
-.subtitle {
-  font-size: 1.2rem;
-  color: var(--el-text-color-secondary);
+.hero-subtitle {
+  font-size: 1.4rem; /* 增大副标题字号 */
+  color: var(--el-text-color-regular);
+  margin-bottom: 2rem;
+  line-height: 1.6;
 }
 
-.feature-container {
-  margin-bottom: 3rem;
+.hero-cta-button {
+  padding: 15px 30px; /* 增大按钮内边距 */
+  font-size: 1.1rem; /* 增大按钮字体 */
+  box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.hero-cta-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 123, 255, 0.4);
+}
+
+.hero-image-container {
+   max-width: 45%; /* 图片容器宽度 */
+   display: flex;
+   justify-content: center;
+   align-items: center;
+}
+
+.hero-image {
+  max-width: 100%; /* 图片最大宽度 */
+  height: auto;
+  display: block;
+  /* 可以添加动画效果 */
+  animation: float 6s ease-in-out infinite;
+}
+
+/* 悬浮动画 */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-15px); }
+  100% { transform: translateY(0px); }
+}
+
+/* Section Title Styles */
+.section-title {
+  text-align: center;
+  font-size: 2rem; /* 调整章节标题大小 */
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  margin-bottom: 3rem; /* 增加底部间距 */
+  position: relative;
+  padding-bottom: 10px;
+}
+
+/* 给标题添加下划线装饰 */
+.section-title::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 4px;
+  background-color: var(--el-color-primary);
+  border-radius: 2px;
+}
+
+/* Features Section Styles */
+.features-section {
+  padding: 60px 40px;
 }
 
 .feature-card {
-  height: 100%;
-  margin-bottom: 20px;
-  transition: transform 0.3s;
+  border-radius: 12px; /* 增加圆角 */
+  border: 1px solid var(--el-border-color-lighter);
+  text-align: center;
+  transition: all 0.3s ease;
+  background-color: #fff;
+  margin-bottom: 30px; /* 增加卡片间距 */
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* 使卡片等高 */
 }
 
 .feature-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
+  transform: translateY(-8px);
+  box-shadow: var(--el-box-shadow-light);
 }
 
-.icon-container {
-  display: flex;
-  justify-content: center;
-  padding: 1.5rem;
-  background-color: var(--el-color-primary-light-9);
+.feature-icon-wrapper {
+  padding: 25px; /* 图标内边距 */
+  border-radius: 50%; /* 圆形背景 */
+  display: inline-flex; /* 使背景适应内容 */
+  margin: 20px auto; /* 上下边距和水平居中 */
 }
 
 .feature-icon {
-  color: var(--el-color-primary);
+  /* 颜色已在模板中通过 style 绑定 */
 }
 
 .feature-content {
-  padding: 1.5rem;
+  padding: 0 20px 20px; /* 调整内边距 */
+  flex-grow: 1; /* 使内容区域填充剩余空间 */
 }
 
-.feature-content h3 {
+.feature-title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
   margin-top: 0;
-  color: var(--el-color-primary);
+  margin-bottom: 0.8rem;
 }
 
-.action-container {
-  text-align: center;
-  margin-bottom: 3rem;
+.feature-description {
+  font-size: 0.95rem;
+  color: var(--el-text-color-secondary);
+  line-height: 1.5;
 }
 
-.system-intro {
-  margin-top: 3rem;
+/* How It Works Section Styles */
+.how-it-works-section {
+  padding: 60px 40px;
+  background-color: #f8f9fa;
 }
 
-.system-intro h2 {
-  text-align: center;
-  color: var(--el-color-primary);
-  margin-bottom: 1.5rem;
+.steps-container {
+  max-width: 1000px;
+  margin: 0 auto;
 }
 
-.architecture-diagram {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 2rem;
+/* 调整 Element Plus Steps 样式 (可选) */
+:deep(.el-step__title) {
+  font-size: 1.1rem;
+  font-weight: 500;
 }
 
-.intro-text {
-  text-align: justify;
-  line-height: 1.6;
+:deep(.el-step__description) {
+  font-size: 0.95rem;
 }
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+  .hero-section {
+    flex-direction: column;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .hero-content {
+    max-width: 100%;
+    margin-bottom: 30px;
+  }
+  .hero-image-container {
+    max-width: 60%; /* 移动端适当调整图片大小 */
+    margin-top: 20px;
+  }
+  .hero-title {
+    font-size: 2.5rem;
+  }
+  .hero-subtitle {
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .features-section,
+  .how-it-works-section {
+    padding: 40px 20px;
+  }
+  .section-title {
+    font-size: 1.8rem;
+    margin-bottom: 2rem;
+  }
+  .feature-title {
+    font-size: 1.2rem;
+  }
+  .feature-description {
+    font-size: 0.9rem;
+  }
+}
+
 </style>
