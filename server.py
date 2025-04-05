@@ -160,50 +160,52 @@ def get_history():
 @app.route('/api/analysis/<session_id>', methods=['GET'])
 def get_analysis(session_id):
     """获取特定训练的分析数据"""
-    # 这里只返回模拟数据，真实情况会根据session_id查询数据库
-    
-    return jsonify({
-        "summary": "本次训练整体表现良好，步频保持稳定，姿态评分为85分。着地方式为中足着地，垂直振幅控制在适当范围内。建议关注足部外翻过度的问题，可通过特定练习改善。",
-        "metrics": {
-            "avgCadence": 172,
-            "avgStride": 115,
-            "postureScore": 85,
-            "landingPattern": "中足着地",
-            "verticalOscillation": 8.5,
-            "groundContactTime": 220
-        },
-        "gaitAnalysis": {
-            "description": "步态周期分析显示支撑相与摆动相比例适中，步态节奏均匀稳定。支撑相时间在理想范围内，摆动相展现出良好的弹性。",
-            "supportPhase": "220毫秒 (38%)",
-            "flightPhase": "360毫秒 (62%)"
-        },
-        "pressureAnalysis": {
-            "description": "足压分布以中前脚掌为主，外侧压力略大。前脚掌受力占比45%，中脚掌占比30%，后脚掌占比25%，符合中足着地模式。",
-            "forefoot": 45,
-            "midfoot": 30,
-            "rearfoot": 25
-        },
-        "recommendations": [
-            {
-                "title": "改善足部外翻",
-                "description": "根据数据分析，您的足部在支撑相有轻微的外翻现象，长期可能导致胫骨内侧应力综合征。建议通过强化内侧肌群和改进着地技术来纠正。",
-                "exercises": [
-                    "单腿平衡练习 (每侧30秒，3组)",
-                    "内侧抗阻训练 (每侧15次，3组)",
-                    "赤足短距离慢跑，注意足部感受"
-                ]
+    try:
+        # 这里只返回模拟数据，真实情况会根据session_id查询数据库
+        return jsonify({
+            "summary": "本次训练整体表现良好，步频保持稳定，姿态评分为85分。着地方式为中足着地，垂直振幅控制在适当范围内。建议关注足部外翻过度的问题，可通过特定练习改善。",
+            "metrics": {
+                "avgCadence": 172,
+                "avgStride": 115,
+                "postureScore": 85,
+                "landingPattern": "中足着地",
+                "verticalOscillation": 8.5,
+                "groundContactTime": 220
             },
-            {
-                "title": "优化步频",
-                "description": "您的平均步频为172步/分钟，略低于最佳范围(175-185步/分钟)。提高步频可减少冲击力并改善跑步经济性。",
-                "exercises": [
-                    "节拍器训练 (设置180BPM，跟随节奏跑步)",
-                    "高抬腿练习 (30秒，4组)",
-                    "短距离加速跑 (100米，专注于步频)"
-                ]
-            }
-        ]
-    })
+            "gaitAnalysis": {
+                "description": "步态周期分析显示支撑相与摆动相比例适中，步态节奏均匀稳定。支撑相时间在理想范围内，摆动相展现出良好的弹性。",
+                "supportPhase": "220毫秒 (38%)",
+                "flightPhase": "360毫秒 (62%)"
+            },
+            "pressureAnalysis": {
+                "description": "足压分布以中前脚掌为主，外侧压力略大。前脚掌受力占比45%，中脚掌占比30%，后脚掌占比25%，符合中足着地模式。",
+                "forefoot": 45,
+                "midfoot": 30,
+                "rearfoot": 25
+            },
+            "recommendations": [
+                {
+                    "title": "改善足部外翻",
+                    "description": "根据数据分析，您的足部在支撑相有轻微的外翻现象，长期可能导致胫骨内侧应力综合征。建议通过强化内侧肌群和改进着地技术来纠正。",
+                    "exercises": [
+                        "单腿平衡练习 (每侧30秒，3组)",
+                        "内侧抗阻训练 (每侧15次，3组)",
+                        "赤足短距离慢跑，注意足部感受"
+                    ]
+                },
+                {
+                    "title": "优化步频",
+                    "description": "您的平均步频为172步/分钟，略低于最佳范围(175-185步/分钟)。提高步频可减少冲击力并改善跑步经济性。",
+                    "exercises": [
+                        "节拍器训练 (设置180BPM，跟随节奏跑步)",
+                        "高抬腿练习 (30秒，4组)",
+                        "短距离加速跑 (100米，专注于步频)"
+                    ]
+                }
+            ]
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 # 静态文件服务
 @app.route('/', defaults={'path': ''})
@@ -283,4 +285,4 @@ def handle_get_feedback():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print(f"Starting server on port {port}...")
-    socketio.run(app, host='0.0.0.0', port=port, debug=True, allow_unsafe_werkzeug=True) 
+    socketio.run(app, host='0.0.0.0', port=port, debug=True, allow_unsafe_werkzeug=True)

@@ -2,12 +2,33 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowRight, DataAnalysis, Monitor, Timer, Promotion, MagicStick, Cpu } from '@element-plus/icons-vue'
+import { useAppModeStore, type AppMode } from '@/stores/appMode'
 
 const router = useRouter()
+const appModeStore = useAppModeStore()
 
-const navigateTo = (name: string) => {
-  router.push({ name })
+// 选中的模式
+const selectedMode = ref<AppMode>(appModeStore.mode)
+
+// 开始训练并设置模式
+const startTraining = () => {
+  // 保存选择的模式
+  appModeStore.setMode(selectedMode.value)
+  // 导航到仪表盘
+  router.push({ name: 'dashboard' })
 }
+
+// 模式选项
+const modeOptions = [
+  {
+    value: 'simulation',
+    label: '模拟数据模式'
+  },
+  {
+    value: 'ai',
+    label: 'AI引擎模式'
+  }
+]
 
 const features = [
   {
@@ -43,12 +64,50 @@ const features = [
       <div class="hero-content">
         <h1 class="hero-title">中长跑实时指导系统</h1>
         <p class="hero-subtitle">您的专属AI跑步教练，实时分析，科学指导</p>
+
+        <!-- 模式选择 -->
+        <div class="mode-selection">
+          <el-radio-group v-model="selectedMode" size="large" class="mode-radio-group">
+            <el-radio-button v-for="option in modeOptions" :key="option.value" :label="option.value">
+              <el-icon v-if="option.value === 'ai'"><Cpu /></el-icon>
+              <el-icon v-else><Monitor /></el-icon>
+              {{ option.label }}
+            </el-radio-button>
+          </el-radio-group>
+
+          <div class="mode-description">
+            <el-alert
+              v-if="selectedMode === 'ai'"
+              type="success"
+              show-icon
+              :closable="false"
+            >
+              <template #title>
+                <span class="mode-alert-title">AI引擎模式已选择</span>
+              </template>
+              <p>使用TensorFlow Lite模型进行实时姿态分析，提供专业指导。</p>
+            </el-alert>
+
+            <el-alert
+              v-else
+              type="info"
+              show-icon
+              :closable="false"
+            >
+              <template #title>
+                <span class="mode-alert-title">模拟数据模式已选择</span>
+              </template>
+              <p>使用模拟数据展示系统功能，适合演示和体验。</p>
+            </el-alert>
+          </div>
+        </div>
+
         <el-button
           type="primary"
           size="large"
           round
           class="hero-cta-button"
-          @click="navigateTo('dashboard')"
+          @click="startTraining"
         >
           <el-icon><Promotion /></el-icon>
           <span>开始我的训练</span>
@@ -137,6 +196,48 @@ const features = [
   color: var(--el-text-color-regular);
   margin-bottom: 2rem;
   line-height: 1.6;
+}
+
+/* 模式选择样式 */
+.mode-selection {
+  margin-bottom: 2rem;
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.mode-radio-group {
+  margin-bottom: 1rem;
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+}
+
+:deep(.el-radio-button) {
+  width: 48%;
+}
+
+:deep(.el-radio-button__inner) {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.mode-description {
+  margin-top: 15px;
+}
+
+:deep(.el-alert) {
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.mode-alert-title {
+  font-weight: bold;
+  font-size: 1.05rem;
 }
 
 .hero-cta-button {
@@ -290,6 +391,17 @@ const features = [
   }
   .hero-subtitle {
     font-size: 1.2rem;
+  }
+
+  /* 移动端模式选择样式适配 */
+  .mode-radio-group {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  :deep(.el-radio-button) {
+    width: 100%;
+    margin-bottom: 10px;
   }
 }
 
