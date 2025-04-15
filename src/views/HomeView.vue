@@ -115,7 +115,7 @@ const features = [
       </div>
        <div class="hero-image-container">
          <!-- Placeholder for an engaging image or animation -->
-         <img src="/running_illustration.svg" alt="Running Illustration" class="hero-image"/>
+         <img src="../assets/logo.svg" alt="Running Illustration" class="hero-image"/>
        </div>
     </section>
 
