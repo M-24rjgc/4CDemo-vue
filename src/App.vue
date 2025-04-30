@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   Monitor,
@@ -11,10 +11,8 @@ import {
 
 const route = useRoute()
 
-// 当前活动路由
-const activeRoute = computed(() => {
-  return route.path
-})
+// 修复当前活动路由的计算方式
+const activeRoute = computed(() => route.path)
 </script>
 
 <template>

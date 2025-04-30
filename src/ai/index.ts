@@ -21,6 +21,14 @@ export {
   getTrainingHistory
 } from './personalization';
 
+// DeepSeek API 导出
+export {
+  analyzeWithDeepSeek
+} from './deepseekService';
+
+// 使用 export type 正确导出类型
+export type { DeepAnalysisResult } from './deepseekService';
+
 // 导入需要的类型
 import { ModelStatus } from './types';
 
@@ -38,6 +46,7 @@ export const SUPPORTED_FEATURES = {
   personalization: true,
   gaitAnalysis: true,
   abnormalityDetection: true,
+  deepAnalysis: true, // 添加深度分析功能
   visualTracking: false // 视觉跟踪功能尚未实现
 };
 

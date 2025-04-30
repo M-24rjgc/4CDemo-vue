@@ -24,17 +24,75 @@
              </template>
           </el-select>
         </div>
+        <!-- 新增导出按钮组 -->
+        <div class="export-buttons" v-if="selectedSession && !loading">
+          <el-dropdown split-button type="primary" size="default" @command="handleExport">
+            导出报告
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="full-pdf">
+                  <el-icon><Document /></el-icon> 完整分析报告 (PDF)
+                </el-dropdown-item>
+                <el-dropdown-item command="analysis-pdf">
+                  <el-icon><DataAnalysis /></el-icon> 仅分析数据 (PDF)
+                </el-dropdown-item>
+                <el-dropdown-item command="training-pdf">
+                  <el-icon><List /></el-icon> 训练计划 (PDF)
+                </el-dropdown-item>
+                <el-dropdown-item command="training-csv" :disabled="!isDeepSeekAnalysis || !deepSeekData?.trainingPlan">
+                  <el-icon><Document /></el-icon> 训练计划 (CSV)
+                </el-dropdown-item>
+                <el-dropdown-item command="image">
+                  <el-icon><Picture /></el-icon> 导出为图片
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
       </div>
     </el-card>
 
+    <!-- 导出配置对话框 -->
+    <el-dialog v-model="exportDialogVisible" title="导出设置" width="500px" @closed="cancelExport">
+      <el-form :model="exportOptions" label-position="top">
+        <el-form-item label="文件名">
+          <el-input v-model="exportOptions.fileName" placeholder="请输入导出文件名"></el-input>
+        </el-form-item>
+        
+        <el-form-item label="包含内容">
+          <el-checkbox v-model="exportOptions.includeCharts">包含图表</el-checkbox>
+          <el-checkbox v-model="exportOptions.includeRecommendations">包含改进建议</el-checkbox>
+        </el-form-item>
+        
+        <el-form-item label="页脚信息 (可选)">
+          <el-input v-model="exportOptions.customFooter" placeholder="自定义页脚文本"></el-input>
+        </el-form-item>
+        
+        <el-form-item>
+          <el-checkbox v-model="exportOptions.watermark">添加水印</el-checkbox>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="cancelExport">取消</el-button>
+          <el-button type="primary" @click="confirmExport" :loading="exportLoading">
+            确认导出
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
+
     <!-- Analysis Content -->
-    <div v-if="selectedSession && !loading" class="analysis-content">
+    <div v-if="selectedSession && !loading" class="analysis-content" ref="analysisContentRef">
       <!-- Overview Section -->
       <el-card class="analysis-section-card overview-card" shadow="never">
         <template #header>
           <div class="card-header">
             <span><el-icon><DataAnalysis /></el-icon> 综合评估</span>
-            <!-- Add more controls if needed -->
+            <el-tag v-if="isDeepSeekAnalysis" size="small" type="success" class="ai-tag">
+              <el-icon><Connection /></el-icon>
+              DeepSeek AI 增强分析
+            </el-tag>
           </div>
         </template>
         <el-row :gutter="30">
@@ -104,6 +162,33 @@
                      <div class="phase-value">{{ analysisData.gaitAnalysis?.flightPhase || '--' }}</div>
                    </div>
                  </div>
+
+                 <!-- DeepSeek 步态技术分析 -->
+                 <div v-if="deepSeekData && isDeepSeekAnalysis" class="deepseek-analysis">
+                   <h3 class="description-title">专家级步态分析</h3>
+                   <el-card shadow="never" class="tech-analysis-card">
+                     <p class="tech-analysis-item">
+                       <span class="tech-label">步态周期:</span>
+                       <span class="tech-content">{{ deepSeekData.technicalAnalysis.gaitCycle }}</span>
+                     </p>
+                     <p class="tech-analysis-item">
+                       <span class="tech-label">着地方式:</span>
+                       <span class="tech-content">{{ deepSeekData.technicalAnalysis.footStrike }}</span>
+                     </p>
+                     <p class="tech-analysis-item">
+                       <span class="tech-label">垂直振幅:</span>
+                       <span class="tech-content">{{ deepSeekData.technicalAnalysis.verticalOscillation }}</span>
+                     </p>
+                     <p class="tech-analysis-item">
+                       <span class="tech-label">足部控制:</span>
+                       <span class="tech-content">{{ deepSeekData.technicalAnalysis.pronationControl }}</span>
+                     </p>
+                     <p class="tech-analysis-item">
+                       <span class="tech-label">手臂摆动:</span>
+                       <span class="tech-content">{{ deepSeekData.technicalAnalysis.armSwing }}</span>
+                     </p>
+                   </el-card>
+                 </div>
                </div>
             </div>
           </el-card>
@@ -165,13 +250,21 @@
         <template #header>
           <div class="card-header">
             <span><el-icon><Opportunity /></el-icon> 改进建议</span>
+            <div class="ai-toggle">
+              <el-switch
+                v-model="isDeepSeekAnalysis"
+                active-text="DeepSeek AI"
+                inactive-text="基础分析"
+                @change="toggleAnalysisMode"
+              />
+            </div>
           </div>
         </template>
         <div class="recommendations">
-          <el-empty v-if="!analysisData.recommendations?.length" description="本次训练表现优异，暂无特别建议" :image-size="100" />
+          <el-empty v-if="getActiveRecommendations.length === 0" description="本次训练表现优异，暂无特别建议" :image-size="100" />
           <el-collapse v-else accordion v-model="activeRecommendation">
             <el-collapse-item
-              v-for="(item, index) in analysisData.recommendations"
+              v-for="(item, index) in getActiveRecommendations"
               :key="index"
               :name="index"
               class="recommendation-item"
@@ -223,11 +316,24 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted, computed, nextTick } from 'vue'
 import * as echarts from 'echarts'
-import { DataAnalysis, Guide, Place, Opportunity, Reading, CircleCheck } from '@element-plus/icons-vue' // Import icons
+import { DataAnalysis, Guide, Place, Opportunity, Reading, CircleCheck, Connection, Document, Picture, List } from '@element-plus/icons-vue' // Import icons
 import { useElementSize } from '@vueuse/core' // Use vueuse for responsiveness
+import { ElMessage } from 'element-plus'
+
+// 导入 DeepSeek 分析功能
+import { analyzeWithDeepSeek, DeepAnalysisResult } from '@/ai'
+
+// 导入导出服务
+import { exportAnalysisReport, exportTrainingPlanToCSV, ExportFormat, ReportType, ExportOptions } from '@/services/exportService'
+import { formatDate } from '@/utils/dateUtils'
 
 // Loading state
 const loading = ref(false)
+const deepSeekLoading = ref(false)
+
+// DeepSeek Analysis State
+const isDeepSeekAnalysis = ref(false)
+const deepSeekData = ref<DeepAnalysisResult | null>(null)
 
 // Session selection
 const sessionOptions = ref([
@@ -269,6 +375,85 @@ const pressureColors = {
   forefoot: '#F56C6C', // Red
   midfoot: '#409EFF',  // Blue
   rearfoot: '#67C23A'  // Green
+}
+
+// 获取适用的建议列表
+const getActiveRecommendations = computed(() => {
+  if (isDeepSeekAnalysis.value && deepSeekData.value) {
+    return deepSeekData.value.recommendations || [];
+  } else {
+    return analysisData.recommendations || [];
+  }
+});
+
+// 处理深度分析模式切换
+async function toggleAnalysisMode(useDeepSeek: boolean) {
+  if (useDeepSeek && !deepSeekData.value) {
+    // 如果切换到 DeepSeek 模式但还没有数据
+    await loadDeepSeekAnalysis();
+  }
+}
+
+// 加载 DeepSeek 深度分析
+async function loadDeepSeekAnalysis() {
+  if (!selectedSession.value || !analysisData.metrics) {
+    return;
+  }
+
+  deepSeekLoading.value = true;
+  
+  try {
+    // 构造适合DeepSeek分析的数据
+    const dataForAnalysis = {
+      cadence: analysisData.metrics.avgCadence,
+      strideLength: analysisData.metrics.avgStride,
+      footStrike: analysisData.metrics.landingPattern,
+      pressureDistribution: {
+        forefoot: analysisData.pressureAnalysis.forefoot,
+        midfoot: analysisData.pressureAnalysis.midfoot,
+        rearfoot: analysisData.pressureAnalysis.rearfoot,
+        // 假设这些数据可能不存在，添加默认值
+        medial: 45 + Math.random() * 10,
+        lateral: 55 - Math.random() * 10
+      },
+      kinematics: {
+        verticalOscillation: analysisData.metrics.verticalOscillation,
+        groundContactTime: analysisData.metrics.groundContactTime,
+        flightTime: 450 - analysisData.metrics.groundContactTime, // 根据触地时间推算
+        pronationAngle: 8 + Math.random() * 4, // 模拟数据
+        hipRotation: 5 + Math.random() * 3 // 模拟数据
+      },
+      pace: '5:' + (30 + Math.floor(Math.random() * 30)),
+      duration: 30 + Math.floor(Math.random() * 30),
+      distance: 5 + Math.random() * 3,
+      scores: {
+        efficiency: 60 + Math.random() * 30,
+        stability: 65 + Math.random() * 25,
+        impact: 70 + Math.random() * 20,
+       
+      },
+      // 根据姿态评分添加可能的异常
+      abnormalities: analysisData.metrics.postureScore < 80 ? 
+        ['轻微足外翻', '垂直振幅偏高'] : 
+        []
+    };
+
+    // 调用 DeepSeek 分析
+    ElMessage.info('正在调用 DeepSeek AI 进行深度分析...');
+    const result = await analyzeWithDeepSeek(dataForAnalysis);
+
+    // 保存分析结果
+    deepSeekData.value = result;
+    
+    // 显示成功消息
+    ElMessage.success('DeepSeek AI 深度分析完成');
+  } catch (error) {
+    console.error('DeepSeek 分析失败:', error);
+    ElMessage.error('DeepSeek AI 分析请求失败，已切换至基础分析');
+    isDeepSeekAnalysis.value = false;
+  } finally {
+    deepSeekLoading.value = false;
+  }
 }
 
 // Mock data fetching function
@@ -350,11 +535,21 @@ const loadSessionData = async (sessionId: string | null) => {
      radarChart?.clear()
      gaitChart?.clear()
      pressureMap?.clear()
+     
+     // Reset DeepSeek data
+     deepSeekData.value = null
+     isDeepSeekAnalysis.value = false
+     
     return
   }
+  
   const data = await mockFetchAnalysisData(sessionId)
   Object.assign(analysisData, data) // Update reactive object
   activeRecommendation.value = 0 // Reset collapse
+  
+  // Reset DeepSeek data and state
+  deepSeekData.value = null
+  isDeepSeekAnalysis.value = false
 
   // Initialize charts after data is loaded
   nextTick(() => {
@@ -366,7 +561,7 @@ const loadSessionData = async (sessionId: string | null) => {
 
 // Get score tag type
 const getScoreTagType = (score: number | undefined | null): ('success' | 'primary' | 'warning' | 'danger') => {
-   if (score === null || score === undefined) return 'info'
+   if (score === null || score === undefined) return 'primary'
    if (score >= 90) return 'success'
    if (score >= 80) return 'primary'
    if (score >= 70) return 'warning'
@@ -608,6 +803,169 @@ onUnmounted(() => {
   gaitChart?.dispose()
   pressureMap?.dispose()
 })
+
+// 文件导出相关状态
+const exportDialogVisible = ref(false)
+const exportLoading = ref(false)
+const pendingExportCommand = ref<string | null>(null)
+const analysisContentRef = ref<HTMLElement | null>(null)
+
+// 导出选项
+const exportOptions = reactive<ExportOptions>({
+  fileName: `跑步分析报告_${formatDate(new Date(), 'YYYY-MM-DD')}`,
+  format: ExportFormat.PDF,
+  type: ReportType.COMBINED,
+  includeCharts: true,
+  includeRecommendations: true,
+  watermark: false
+})
+
+// 处理导出命令
+const handleExport = (command: string) => {
+  if (command === 'training-csv') {
+    // CSV格式直接导出，不需要对话框
+    exportTrainingPlan()
+    return
+  }
+
+  // 其他导出格式需要配置
+  pendingExportCommand.value = command
+  
+  // 根据命令类型预设导出选项
+  switch (command) {
+    case 'full-pdf':
+      exportOptions.type = ReportType.COMBINED
+      exportOptions.format = ExportFormat.PDF
+      exportOptions.fileName = `跑步综合报告_${formatDate(new Date(), 'YYYY-MM-DD')}`
+      break
+    case 'analysis-pdf':
+      exportOptions.type = ReportType.ANALYSIS
+      exportOptions.format = ExportFormat.PDF
+      exportOptions.fileName = `跑步分析报告_${formatDate(new Date(), 'YYYY-MM-DD')}`
+      break
+    case 'training-pdf':
+      exportOptions.type = ReportType.TRAINING_PLAN
+      exportOptions.format = ExportFormat.PDF
+      exportOptions.fileName = `跑步训练计划_${formatDate(new Date(), 'YYYY-MM-DD')}`
+      break
+    case 'image':
+      exportOptions.format = ExportFormat.IMAGE
+      exportOptions.fileName = `跑步分析_${formatDate(new Date(), 'YYYY-MM-DD')}`
+      break
+  }
+  
+  // 显示导出配置对话框
+  exportDialogVisible.value = true
+}
+
+// 确认导出
+const confirmExport = async () => {
+  if (!pendingExportCommand.value || !analysisContentRef.value) {
+    ElMessage.error('导出失败: 无效的导出参数')
+    return
+  }
+  
+  exportLoading.value = true
+  
+  try {
+    // 准备导出数据
+    const exportData = {
+      sessionId: selectedSession.value || '',
+      sessionDate: getSelectedSessionLabel()?.split(' ')[0] || formatDate(new Date()),
+      sessionType: getSelectedSessionLabel()?.split(' ').slice(1).join(' ') || '未知类型',
+      sessionDuration: getSelectedSessionDuration(),
+      summary: analysisData.summary,
+      metrics: analysisData.metrics,
+      gaitAnalysis: analysisData.gaitAnalysis,
+      pressureAnalysis: analysisData.pressureAnalysis,
+      recommendations: analysisData.recommendations,
+      // 修复类型兼容问题：使用类型断言确保与 DeepAnalysisResult | undefined 兼容
+      deepSeekData: deepSeekData.value as DeepAnalysisResult | undefined,
+      isDeepSeekAnalysis: isDeepSeekAnalysis.value
+    }
+    
+    // 执行导出
+    const success = await exportAnalysisReport(
+      analysisContentRef.value,
+      exportData,
+      exportOptions
+    )
+    
+    if (success) {
+      ElMessage.success('导出成功')
+      exportDialogVisible.value = false
+    } else {
+      ElMessage.error('导出失败')
+    }
+  } catch (error) {
+    console.error('导出错误:', error)
+    ElMessage.error(`导出失败: ${(error as Error).message}`)
+  } finally {
+    exportLoading.value = false
+  }
+}
+
+// 取消导出
+const cancelExport = () => {
+  pendingExportCommand.value = null
+  exportDialogVisible.value = false
+}
+
+// 导出训练计划为CSV
+const exportTrainingPlan = () => {
+  if (!deepSeekData.value?.trainingPlan) {
+    ElMessage.warning('没有可用的训练计划数据')
+    return
+  }
+  
+  const exportData = {
+    sessionId: selectedSession.value || '',
+    sessionDate: getSelectedSessionLabel()?.split(' ')[0] || formatDate(new Date()),
+    sessionType: getSelectedSessionLabel()?.split(' ').slice(1).join(' ') || '未知类型',
+    sessionDuration: getSelectedSessionDuration(),
+    summary: analysisData.summary,
+    metrics: analysisData.metrics,
+    gaitAnalysis: analysisData.gaitAnalysis,
+    pressureAnalysis: analysisData.pressureAnalysis,
+    recommendations: analysisData.recommendations,
+    deepSeekData: deepSeekData.value,
+    isDeepSeekAnalysis: isDeepSeekAnalysis.value
+  }
+  
+  // CSV导出选项
+  const csvExportOptions = {
+    fileName: `跑步训练计划_${formatDate(new Date(), 'YYYY-MM-DD')}`
+  }
+  
+  const success = exportTrainingPlanToCSV(exportData, csvExportOptions)
+  
+  if (success) {
+    ElMessage.success('训练计划已导出为CSV格式')
+  } else {
+    ElMessage.error('导出训练计划失败')
+  }
+}
+
+// 获取所选会话的标签
+const getSelectedSessionLabel = (): string | undefined => {
+  if (!selectedSession.value) return undefined
+  
+  const selectedOption = sessionOptions.value.find(
+    option => option.value === selectedSession.value
+  )
+  
+  return selectedOption?.label
+}
+
+// 获取所选会话的时长
+const getSelectedSessionDuration = (): string => {
+  const label = getSelectedSessionLabel()
+  if (!label) return '未知'
+  
+  // 尝试从标签中提取时长，格式如 "2023-03-28 晨跑 (40分钟)"
+  const match = label.match(/\((\d+分钟)\)/)
+  return match ? match[1] : '未知'
+}
 </script>
 
 <style scoped>
@@ -643,10 +1001,6 @@ onUnmounted(() => {
   margin: 0;
 }
 
-.session-selector {
-  /* Styles for selector container if needed */
-}
-
 /* General Card Styling */
 .analysis-section-card {
   margin-bottom: 24px;
@@ -675,6 +1029,21 @@ onUnmounted(() => {
   font-size: 1.2em;
 }
 
+.ai-tag {
+  margin-left: 12px;
+  display: flex;
+  align-items: center;
+}
+
+.ai-tag .el-icon {
+  margin-right: 4px;
+  font-size: 0.9em;
+}
+
+.ai-toggle {
+  margin-left: auto;
+}
+
 :deep(.analysis-section-card .el-card__body) {
   padding: 20px; /* Consistent padding */
 }
@@ -682,10 +1051,6 @@ onUnmounted(() => {
 .chart-wrapper {
   height: 300px; /* Default chart height */
   width: 100%;
-}
-
-.analysis-content {
-  /* Container for the main analysis sections */
 }
 
 /* Overview Section */
@@ -700,7 +1065,8 @@ onUnmounted(() => {
 }
 
 .overview-summary {
-  /* Styles for summary text area */
+  padding: 10px;
+  line-height: 1.6;
 }
 
 .summary-title {
@@ -731,7 +1097,7 @@ onUnmounted(() => {
 
 /* Detail Analysis Section */
 .detail-analysis-row {
-  /* Styles if needed */
+  margin-bottom: 20px; /* 添加样式以替换空规则 */
 }
 
 .analysis-content-wrapper {
@@ -806,6 +1172,36 @@ onUnmounted(() => {
     background-color: var(--el-border-color);
 }
 
+/* DeepSeek Analysis Styles */
+.deepseek-analysis {
+  margin-top: 20px;
+}
+
+.tech-analysis-card {
+  background-color: #f9fafc;
+  border-radius: 6px;
+}
+
+:deep(.tech-analysis-card .el-card__body) {
+  padding: 12px 15px;
+}
+
+.tech-analysis-item {
+  margin: 8px 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.tech-label {
+  font-weight: 600;
+  color: var(--el-color-primary);
+  margin-right: 8px;
+}
+
+.tech-content {
+  color: var(--el-text-color-regular);
+}
+
 /* Pressure Specific */
 .pressure-stats {
   margin-top: 20px;
@@ -830,11 +1226,11 @@ onUnmounted(() => {
 
 /* Recommendations Section */
 .recommendation-card {
-  /* Styles if needed */
+  border-radius: 8px; /* 添加样式以替换空规则 */
 }
 
 .recommendations {
- /* Container styles */
+  padding: 5px 0; /* 添加样式以替换空规则 */
 }
 
 :deep(.recommendation-item .el-collapse-item__header) {
@@ -873,7 +1269,7 @@ onUnmounted(() => {
 }
 
 .recommendation-content {
- /* Styles for content area */
+  padding: 5px 0; /* 添加样式以替换空规则 */
 }
 
 .recommendation-description {
@@ -979,5 +1375,4 @@ onUnmounted(() => {
        font-size: 0.95rem;
    }
 }
-
 </style>
