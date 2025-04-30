@@ -2,6 +2,24 @@
 """
 中长跑实时指导系统启动脚本
 此脚本用于简化系统的启动过程，包括环境检查、依赖安装和Web服务启动
+
+功能说明:
+- 检查Node.js和npm环境是否正确安装
+- 启动Vue 3前端开发服务器
+- 自动打开浏览器访问Web界面
+
+系统架构:
+- 前端: Vue 3, TypeScript, Element Plus, ECharts
+- 后端: Python Flask, Socket.IO
+- AI引擎: TensorFlow.js (边缘计算架构)
+
+启动流程:
+1. 检查开发环境
+2. 启动前端开发服务器
+3. 打开浏览器访问应用
+
+推荐使用方法:
+在项目根目录执行 `python run.py`
 """
 
 import os
@@ -114,4 +132,4 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         print(f"\n{YELLOW}用户中断，正在退出...{ENDC}")
-        sys.exit(0) 
+        sys.exit(0)

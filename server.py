@@ -1,7 +1,32 @@
 #!/usr/bin/env python
 """
 中长跑实时指导系统后端服务
-提供API和实时数据传输功能
+
+功能说明：
+- 提供RESTful API接口，支持历史数据查询和分析结果获取
+- 通过Socket.IO实现实时数据传输和反馈
+- 包含模拟数据生成模块，用于测试和开发阶段
+- 支持静态文件服务，可直接部署前端Vue应用
+
+技术架构：
+- Flask框架提供Web服务和API
+- Flask-SocketIO实现双向实时通信
+- Flask-CORS处理跨域资源共享
+- 支持同步和异步数据处理模式
+
+API端点：
+- GET /api/history - 获取历史训练数据
+- GET /api/analysis/<session_id> - 获取特定训练会话的详细分析
+
+Socket.IO事件：
+- connect/disconnect - 客户端连接/断开事件
+- start_collection - 开始数据采集
+- stop_collection - 停止数据采集
+- get_feedback - 获取实时训练反馈
+- sensor_data - 服务器推送传感器数据
+
+使用方法：
+python server.py [--port PORT]
 """
 
 import os
