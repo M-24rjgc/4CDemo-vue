@@ -6,7 +6,8 @@ import {
   HomeFilled,
   DataLine,
   Histogram,
-  TrendCharts
+  TrendCharts,
+  Upload  // 添加上传图标
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -46,6 +47,10 @@ const activeRoute = computed(() => route.path)
           <el-menu-item index="/analysis">
             <el-icon><TrendCharts /></el-icon>
             <span>深度分析</span>
+          </el-menu-item>
+          <el-menu-item index="/upload">
+            <el-icon><Upload /></el-icon>
+            <span>上传数据</span>
           </el-menu-item>
           <div class="menu-spacer"></div>
         </el-menu>

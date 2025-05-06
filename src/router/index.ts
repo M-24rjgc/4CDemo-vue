@@ -35,6 +35,14 @@ const router = createRouter({
       meta: {
         title: '深度分析'
       }
+    },
+    {
+      path: '/upload',
+      name: 'upload',
+      component: () => import('../views/UploadDataView.vue'),
+      meta: {
+        title: '上传训练数据'
+      }
     }
   ]
 })
