@@ -48,7 +48,7 @@ const router = createRouter({
 })
 
 // 设置页面标题
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   document.title = `${to.meta.title} - 中长跑实时指导系统`
   next()
 })
